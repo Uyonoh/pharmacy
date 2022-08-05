@@ -1,7 +1,7 @@
-from django.urls import path, include
-from .views import newbussinessmonth, viewbussinessmonth
+from django.urls import path
+from .views import new_bussiness_month, view_bussiness_month
 
 urlpatterns = [
-	path("viewbussinessmonth", viewbussinessmonth, name="view_bussinessmonth"),
-	path("newbussinessmonth", newbussinessmonth, name="new_bussinessmonth"),
+	path("viewbussinessmonth", view_bussiness_month, name="view_bussiness_month"),
+	path("newbussinessmonth", new_bussiness_month, name="new_bussiness_month"),
 ]

@@ -14,6 +14,13 @@ class BussinessMonth(models.Model):
 	closing_date = models.DateField("date", null=True)
 	profit = models.IntegerField(default=0)
 
+	def any(self):
+		""" Check if any bussiness month exists """
+		bussiness_months = BussinessMonth.objects.get()
+		if bussiness_months[0]:
+			return True
+		return False
+
 	def calculate_profit(self):
 		""" Calculate the profit of a bussiness month """
 		cash_profit = self.closing_cash - self.opening_cash
