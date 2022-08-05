@@ -1,10 +1,21 @@
 from django.shortcuts import render
+from django.views.generic.edit import FormView
 from django.http import HttpResponse, HttpResponseRedirect
 from .forms import DrugForm, SaleForm
 from .models import Drug, Sale
 from books.models import Credit, Debit, Stock
 
 # Create your views here.
+
+class index(FormView):
+	template_name = "add_drugs.html"
+	form_class = DrugForm
+	success_url = "add_drugs"
+
+	def form_valid(self, form):
+		form.save()
+		return super().form_valid(form)
+
 
 def add_drugs(request):
 	if request.method =="POST":
@@ -34,6 +45,7 @@ def sell_drugs(request):
 	if request.method == "POST":
 		print(request.POST)
 		form = SaleForm(request.POST)
+		print(form.cleaned_data)
 		if form.is_valid():
 			drug = Drug.objects.filter(drug_name=form.instance.drug_name, weight=form.instance.weight)
 			if drug.count():

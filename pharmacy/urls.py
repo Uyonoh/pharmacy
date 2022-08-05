@@ -21,6 +21,6 @@ urlpatterns = [
 	#path('/', include('main.urls')),
 	path('book/', include('books.urls')),
 	path('drug/', include('drugs.urls')),
-	#path('payment/', include('payment.urls')),
-	#path('users/', include('users.urls')),
+	path('payment/', include('payment.urls')),
+	path('users/', include('users.urls')),
 ]

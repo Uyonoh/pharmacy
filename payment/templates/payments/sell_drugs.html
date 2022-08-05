@@ -1,0 +1,14 @@
+{% extends 'drugs/base.html' %}
+
+{% block content %}
+{% load crispy_forms_tags %}
+
+<div class="form-container">
+	<form method="post" action="./sell_drugs">
+		{% csrf_token %}
+		{{form|crispy}}
+		<button class="submit" type="submit" name="add_sale_list" value="add">Add Sale</button>
+		<button class="submit" type="submit" name="register_sale" value="register">Register Sale</button>
+	</form>
+</div>
+{% endblock %}
