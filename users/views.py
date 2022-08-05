@@ -9,17 +9,14 @@ from .forms import PharmacyStaffForm
 def register(request):
 	form = PharmacyStaffForm()
 	if request.method == "POST":
-		print("===============")
 		print(request.POST)
-		print("===============")
 		form = PharmacyStaffForm(request.POST)
-		if form.is_valid:
-			
+
+		#if the data is valid create a new usew and account
+		if form.is_valid:	
 			user = create_user(request)
-			form.instance.user_id = user.id
-			
-			form.save()
-			
+			form.instance.user_id = user.id	
+			form.save()	
 			return HttpResponseRedirect("users/success.html")
 		else:
 			#print(form.errors)
@@ -31,7 +28,6 @@ def success(request):
 	return render(request, "users/success.html", {})
 
 def create_user(request):
-	
 	username = request.POST.get("first_name")
 	print(username)
 	print("+++++")
