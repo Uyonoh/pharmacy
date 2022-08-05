@@ -1,9 +1,9 @@
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.views.generic.edit import FormView
-from django.http import HttpResponse, HttpResponseRedirect
+from books.models import Credit, Debit, Stock
 from .forms import DrugForm, SaleForm
 from .models import Drug, Sale
-from books.models import Credit, Debit, Stock
 
 # Create your views here.
 
@@ -19,9 +19,10 @@ class index(FormView):
 
 def add_drugs(request):
 	if request.method =="POST":
-		
 		form = DrugForm(request.POST)
 		
+		# If the data is valid check if the drug with the same name, weight and exp_date exists
+		# If not save the drug and register debit, else update existing drug
 		if form.is_valid():
 			drug = Drug.objects.filter(drug_name=form.instance.drug_name, weight=form.instance.weight, exp_date=form.instance.exp_date)
 			if not drug.count():
@@ -43,9 +44,10 @@ def add_drugs(request):
 
 def sell_drugs(request):
 	if request.method == "POST":
-		print(request.POST)
 		form = SaleForm(request.POST)
-		print(form.cleaned_data)
+
+		#If the data is valid check if the drug exists
+		# If so subtract from drug and register sales and credit
 		if form.is_valid():
 			drug = Drug.objects.filter(drug_name=form.instance.drug_name, weight=form.instance.weight)
 			if drug.count():
@@ -70,6 +72,7 @@ def sell_drugs(request):
 
 
 def debit_stock(drug):
+	"""add drug to stock and register debit"""
 	_debit = Debit()
 	_stock = Stock()
 
@@ -82,6 +85,7 @@ def debit_stock(drug):
 	_stock.save()
 
 def credit(drug):
+	"""register credi"""t
 	_credit = Credit()
 	_credit.item = str(drug)
 	_credit.amount = drug.total_price
