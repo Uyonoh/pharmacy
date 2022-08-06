@@ -52,8 +52,8 @@ def view_bussiness_month(request):
 			this_month = months.filter(opening_date__month=date.today().month)[0]
 
 		month_view = {
-			"last_opening_cash": last_opening_cash,
-			"last_opening_stock": last_opening_stock,
+			"last_opening_cash": last_month.opening_cash,
+			"last_opening_stock": last_month.opening_stock,
 			"last_closing_cash": last_month.closing_cash,
 			"last_closing_stock": last_month.closing_stock
 			}
