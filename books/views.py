@@ -39,21 +39,14 @@ def view_bussiness_month(request):
 			return render(request, "books/viewbussinessmonth.html", {"err_msg": err_msg})
 
 		last_month = months.filter(opening_date__month=date.today().month-1)[0]
-		last_opening_cash = last_month.opening_cash
-		last_opening_stock = last_month.opening_stock
-		new_cash = balance_cash(last_opening_cash)
-		new_stock = balance_stock(last_opening_stock)
 
 		# If the current month's opening amounts do not exist then
 		# calculate them
 		if not months.filter(opening_date__month=date.today().month):
-			last_month.closing_cash = new_cash
-			last_month.closing_stock = new_stock
-			last_month.closing_date = date.today()
-			last_month.save()
+			last_month.close()
 			this_month = BussinessMonth()
-			this_month.opening_cash = new_cash
-			this_month.opening_stock = new_stock
+			this_month.opening_cash = last_month.closing_cash
+			this_month.opening_stock = last_month.closing_stock
 			this_month.save()
 		else:
 			this_month = months.filter(opening_date__month=date.today().month)[0]

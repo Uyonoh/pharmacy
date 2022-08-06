@@ -1,17 +1,28 @@
+from random import randint
 from venv import create
 from django.test import TestCase
+from django.utils import timezone
+from .models import Credit, Debit, Stock
 
 # Create your tests here.
 
+class CashChecks(TestCase):
+	def check_credits(self, n=10):
+		credits = []
+		for i in range(n):
+			amount = randint(5, 5000)
+			credit = Credit.objects.create(item=f"credit-{i}", amount=amount)
+		
 
-#check adding sales adds credits, and stock debits
 
-#create past and current credits
+	#create past and current credits
 
-#create past and current debits
+	#create past and current debits
 
-#create ane current bussiness month
+	#check adding sales adds credits, and stock debits
 
-#test new and view bussiness values
+	#create ane current bussiness month
 
-#test balances and checks
+	#test new and view bussiness values
+
+	#test balances and checks

@@ -85,7 +85,7 @@ def debit_stock(drug):
 	_stock.save()
 
 def credit(drug):
-	"""register credi"""t
+	"""register credit"""
 	_credit = Credit()
 	_credit.item = str(drug)
 	_credit.amount = drug.total_price

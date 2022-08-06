@@ -1,6 +1,9 @@
+from datetime import date
 from django.db import models
 from django.forms import IntegerField
-from drugs.models import Drug
+from django.utils import timezone
+from books.views import balance_cash
+from drugs.models import Drug, Sale
 
 # Create your models here.
 
@@ -21,6 +24,42 @@ class BussinessMonth(models.Model):
 			return True
 		return False
 
+	def balance_cash(self):
+		""" Compute and return balances for cash transactions """
+		credit = 0
+		debit = 0
+
+		# Filter transactions for the bussiness month and get the total credits and debits
+		credits = Credit.objects.filter(book_date__month=self.opening_date.month)
+		debits = Debit.objects.filter(book_date__month=self.opening_date.month)
+
+		for item in credits:
+			credit += item.amount
+		
+		for item in debits:
+			debit += item.amount
+
+		balance = self.opening_cash + credit - debit
+		return balance
+
+	def balance_stock(self):
+		""" Compute and return balances for stock """
+		sold_stock = 0
+		added_stock = 0
+
+		# Filter stock and sales by bussiness month and get total cost and sales
+		sales = Sale.objects.filter(sale_time__month=self.opening_date.month)
+		stock = Stock.objects.all(date_added__month=self.opening_date.month)
+
+		for sale in sales:
+			sold_stock += sale.total_price
+		
+		for item in stock:
+			added_stock += item.price
+
+		balance = self.opening_stock + added_stock - sold_stock
+		return balance
+
 	def calculate_profit(self):
 		""" Calculate the profit of a bussiness month """
 		cash_profit = self.closing_cash - self.opening_cash
@@ -29,6 +68,13 @@ class BussinessMonth(models.Model):
 		self.profit = total_profit
 		self.save()
 		return cash_profit, stock_profit, total_profit
+
+	def close(self):
+		""" Close the accounts for the bussiness month """
+		self.closing_cash = self.balance_cash()
+		self.closing_stock = self.balance_stock()
+		self.closing_date = date.today()
+		self.save()
 	
 	def __str__(self):
 		return f"Bussiness month from {self.opening_date} to {self.closing_date}"
@@ -58,6 +104,7 @@ class Debit(models.Model):
 class Stock(models.Model):
 	drug = models.ForeignKey(Drug, on_delete=models.CASCADE)
 	price = IntegerField()
+	date_added = models.DateField(auto_now_add=True)
 	balanced = models.BooleanField(default=True)
 
 	def __str__(self):
