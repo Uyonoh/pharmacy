@@ -1,8 +1,14 @@
-{% extends "drugs/base.html" %}
+{% extends "main/base.html" %}
 
 {% block content %}
-	<p>{{err_msg}}</p>
-	{% for item, value in view.items %}
-		<p>{{item}}: {{value}}</p>
-	{% endfor %}
+	<div class="container page-container">
+		{% if err_msg %}
+			<p class="err_msg">{{err_msg}}</p>
+			<span>Return <a href="{% url 'main:index' %}">Home</a></span>
+		{% endif %}
+		{% for item, value in view.items %}
+			<p>{{item}}: {{value}}</p>
+		{% endfor %}
+	</div>
 {% endblock %}
+

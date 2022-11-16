@@ -1,7 +1,10 @@
 from django.urls import path
-from .views import add_drugs, sell_drugs
+from .views import ViewDrugs, add_drugs, sell_drugs, SearchDrugs
 
+app_name= "drugs"
 urlpatterns = [
 	path('add_drugs', add_drugs, name="add"),
 	path("sell_drugs", sell_drugs, name="sale"),
+	path("drugs", ViewDrugs.as_view(), name="view-drugs"),
+	path("search", SearchDrugs.as_view(), name="search")
 ]

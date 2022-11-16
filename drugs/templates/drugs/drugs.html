@@ -1,0 +1,49 @@
+{% extends "main/base.html" %}
+
+{% block content %}
+	<!-- <table class="drug-list">
+		{ for column_name in drugs %}
+		<h>{{column_name}}</th>
+		{ end for %}
+		{ for column %}
+	</table> -->
+	<div class="container search">
+		<form  class="d-flex" method="get" action="search">
+			<input name="search-box" class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+			<!-- input name="search-options" class="form-control  me-2" type="" -->
+			<button class="btn btn-outline-success" type="submit">Search</button>
+		</form>
+	</div>
+
+	{% if drugs %}
+	
+		<table>
+			<thead>
+				{% for heading in headings %}
+					<th>{{heading}}</th>
+				{% endfor %}
+				<th>Day Added</th>
+				<th>Out of Stock</th>
+				<th>Expired</th>
+			</thead>
+				{% for drug in drugs %}
+					{% if drug.expired %}
+					<tr class="expired">
+					{% elif drug.expire_soon %}
+					<tr class="exp-soon">
+					{% else %}
+					<tr class="exp-far">
+					{% endif %}
+				
+					{% for item in drug.tabulate %}
+						<td>{{item}}</td>
+					{% endfor %}
+					</tr>
+				
+				{% endfor %}
+		</table>
+	{% else %}
+
+	{% endif %}
+	
+{% endblock %}

@@ -2,7 +2,6 @@ from datetime import date
 from django.db import models
 from django.forms import IntegerField
 from django.utils import timezone
-from books.views import balance_cash
 from drugs.models import Drug, Sale
 
 # Create your models here.
@@ -11,10 +10,10 @@ from drugs.models import Drug, Sale
 class BussinessMonth(models.Model):
 	opening_cash = models.IntegerField()
 	opening_stock = models.IntegerField()
-	opening_date = models.DateField("date", auto_now_add=True)
+	opening_date = models.DateField("opening date", auto_now_add=True)
 	closing_cash = models.IntegerField(null=True)
 	closing_stock = models.IntegerField(null=True)
-	closing_date = models.DateField("date", null=True)
+	closing_date = models.DateField("closing date", null=True)
 	profit = models.IntegerField(default=0)
 
 	def any(self):
@@ -49,13 +48,13 @@ class BussinessMonth(models.Model):
 
 		# Filter stock and sales by bussiness month and get total cost and sales
 		sales = Sale.objects.filter(sale_time__month=self.opening_date.month)
-		stock = Stock.objects.all(date_added__month=self.opening_date.month)
+		stock = Stock.objects.filter(date_added__month=self.opening_date.month)
 
 		for sale in sales:
 			sold_stock += sale.total_price
 		
 		for item in stock:
-			added_stock += item.price
+			added_stock += 5 #item.price
 
 		balance = self.opening_stock + added_stock - sold_stock
 		return balance
@@ -67,13 +66,14 @@ class BussinessMonth(models.Model):
 		total_profit = cash_profit + stock_profit
 		self.profit = total_profit
 		self.save()
-		return cash_profit, stock_profit, total_profit
+		#return cash_profit, stock_profit, total_profit
 
 	def close(self):
 		""" Close the accounts for the bussiness month """
 		self.closing_cash = self.balance_cash()
 		self.closing_stock = self.balance_stock()
 		self.closing_date = date.today()
+		self.calculate_profit()
 		self.save()
 	
 	def __str__(self):
@@ -102,8 +102,9 @@ class Debit(models.Model):
 
 # A model to record all additions of stock
 class Stock(models.Model):
-	drug = models.ForeignKey(Drug, on_delete=models.CASCADE)
-	price = IntegerField()
+	# drug = models.ForeignKey(Drug, on_delete=models.CASCADE)
+	drug = models.CharField(max_length=100)
+	price = models.IntegerField()
 	date_added = models.DateField(auto_now_add=True)
 	balanced = models.BooleanField(default=True)
 

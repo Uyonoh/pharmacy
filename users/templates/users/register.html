@@ -1,10 +1,14 @@
-{% extends "drugs/base.html" %}
+{% extends "main/base.html" %}
 
 {% block content %}
-
-	<form method="post" action="{% url 'users:register' %}">
-		{% csrf_token %}
-		{{form.as_p}}
-		<input type="submit" value="submit">
-	</form>
+{% load crispy_forms_tags %}
+	<div class="container form-container">
+		<form method="post" action="{% url 'users:register' %}">
+			{% csrf_token %}
+			
+			{{form|crispy}}
+			
+			<input type="submit" value="submit">
+		</form>
+	</div>
 {% endblock %}

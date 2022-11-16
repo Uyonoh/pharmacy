@@ -2,7 +2,21 @@
 
 {% block content %}
 
-<h1 class="green">RIFMAN PHARMACEUTICALS</h1>
-<h6>A place where healing is found!</h3>
+	<h1 class="green">RIFMAN PHARMACEUTICALS</h1>
+	<h6>A place where healing is found!</h3>
+
+	{% if user.is_authenticated %}
+		<div class="container">
+			<ul>
+				<li><a href="{% url 'drugs:view-drugs' %}">Drugs</a></li>
+				<li><a href="{% url 'books:view_bussiness_month' %}">Balances</a></li>
+				
+			</ul>
+		</div>
+	{% else %}
+
+		<p>You are not signed in. <br /><a href="{% url 'users:login' %}">Login</a></p>
+	{% endif %}
+
 
 {% endblock %}

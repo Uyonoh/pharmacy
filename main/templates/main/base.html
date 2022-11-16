@@ -6,6 +6,7 @@
 		<link href="{% static 'drugs/css/bootstrap.min.css' %}" rel="stylesheet">
 		<link href="{% static 'main/css/styles.css' %}" rel="stylesheet">
 		<script src="{% static 'drugs/js/bootstrap.bundle.min.js' %}" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous" defer></script>
+		<script src="{% static 'drugs/js/myscript.js' %}" defer></script>
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<meta lang="en-us" charset="utf-8">
 		<title>The Link</title>
@@ -36,8 +37,9 @@
 		              Dropdown
 		            </a>
 		            <ul class="dropdown-menu" aria-labelledby="offcanvasNavbarDropdown">
-		              <li><a class="dropdown-item" href="#">Action</a></li>
-		              <li><a class="dropdown-item" href="#">Another action</a></li>
+		              <li><a class="dropdown-item" href="{% url 'drugs:view-drugs' %}">View Drugs</a></li>
+		              <li><a class="dropdown-item" href="{% url 'drugs:add' %}">Add Drugs</a></li>
+		              <li><a class="dropdown-item" href="{% url 'drugs:sale' %}">Sell Drugs</a></li>
 		              <li>
 		                <hr class="dropdown-divider">
 		              </li>
@@ -45,14 +47,22 @@
 		            </ul>
 		          </li>
 		        </ul>
-		        <form class="d-flex">
+		        <form class="d-flex" method="get" action="search">
 		          <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
 		          <button class="btn btn-outline-success" type="submit">Search</button>
 		        </form>
+				{% if user.is_authenticated %}
+					<form action="/users/logout" method="get"><button type="submit">Logout</button></form>
+				{% else %}
+					<form action="/users/login" method="get"><button type="submit">Login</button></form>
+				{% endif %}
 		      </div>
 		    </div>
 		  </div>
 		</nav>
+		{% block unknown %}
+		{% endblock %}
+
 		{% block content %}
 		{% endblock %}
 	</body>
