@@ -1,13 +1,12 @@
 from datetime import date
 from django.db import models
-from django.forms import IntegerField
-from django.utils import timezone
-from drugs.models import Drug, Sale
+from drugs.models import Sale
 
 # Create your models here.
 
 # A model to record cash and stock for each month
 class BussinessMonth(models.Model):
+	""" A bussiness month recording all transactions, profits and losses within the month """
 	opening_cash = models.IntegerField()
 	opening_stock = models.IntegerField()
 	opening_date = models.DateField("opening date", auto_now_add=True)
@@ -82,6 +81,7 @@ class BussinessMonth(models.Model):
 
 # A model to record all credit transactions
 class Credit(models.Model):
+	""" Records of all crediting transactions """
 	item = models.CharField(max_length=200)
 	amount = models.IntegerField()
 	book_date = models.DateField("date", auto_now_add=True)
@@ -92,6 +92,7 @@ class Credit(models.Model):
 
 # A model to record all debit transactions
 class Debit(models.Model):
+	""" Records of all debiting transactions """
 	item = models.CharField(max_length=200)
 	amount = models.IntegerField()
 	book_date = models.DateField("date", auto_now_add=True)
@@ -102,6 +103,7 @@ class Debit(models.Model):
 
 # A model to record all additions of stock
 class Stock(models.Model):
+	""" Records of all stock/drug transactions """
 	# drug = models.ForeignKey(Drug, on_delete=models.CASCADE)
 	drug = models.CharField(max_length=100)
 	price = models.IntegerField()

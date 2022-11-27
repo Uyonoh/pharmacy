@@ -1,8 +1,9 @@
 from django import forms
 from django.db import models
-from .models import Drug, Sale, Tablet
+from .models import Drug, Sale, Tablet, state_choices
 
 unit_choices = (("Cartons", "Cartons"), ("Packets", "Packets"), ("Sachets", "Sachets"))
+
 
 # class SubDrug(Drug):
 # 	units = models.CharField(max_length=30, choices=unit_choices, default="Packets")
@@ -11,20 +12,29 @@ unit_choices = (("Cartons", "Cartons"), ("Packets", "Packets"), ("Sachets", "Sac
 
 class DrugForm(forms.ModelForm):
 	class Meta:
-		model = Tablet
-		fields = ["drug_name", "brand_name", "drug_type", "state", "tab_cd", "weight",
+		model = Drug
+		fields = ["drug_name", "brand_name", "drug_type", "state", "weight",
 		"manufacturer", "exp_date", "units", "purchase_amount", "price", "category",
 		"purpose", "location"]
 
-	def save(self, first_stock=True):
+	def save(self):
 		form = super(DrugForm, self).save(commit=False)
 		for field in ["drug_name", "brand_name", "drug_type", "manufacturer", "category", "purpose", "location"]:
 			val = getattr(form, field)
 			if val:
 				setattr(form, field, val.upper())
-		form.save(first_stock)
+		# form.save(first_stock, commit=False)
+
+class TabletForm(forms.ModelForm):
+	class Meta:
+		model = Tablet
+		fields = ["tab_cd", "no_packs"]
+
+		def save(self):
+			form = super(TabletForm, self).save()
 
 class SaleForm(forms.ModelForm):
+	state = forms.ChoiceField(widget=forms.RadioSelect, choices=state_choices)
 	class Meta:
 		model = Sale
 		fields = ["drug_name", "brand_name", "weight", "amount"]

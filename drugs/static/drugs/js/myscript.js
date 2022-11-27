@@ -17,7 +17,7 @@ function toggleTabCd(){
 handle = document.querySelector("form div select");
 //handle.onclick = toggleTabCd();
 
-handle.addEventListener("click", toggleTabCd);//() => {
+// handle.addEventListener("click", toggleTabCd);//() => {
 	// console.log("clicked");
 	// entry = document.querySelector("form div select");
 	// labels = document.querySelectorAll("form div label");

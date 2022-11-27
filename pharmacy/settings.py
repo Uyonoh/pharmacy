@@ -90,7 +90,7 @@ DATABASES = {
 # }
 
 		'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'rifman_db',
+        'NAME': 'onedb',
 		'USER': 'postgres',
 		'PASSWORD': 'if(Post1)open',
 		'HOST': 'localhost',

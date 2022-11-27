@@ -13,7 +13,7 @@ def new_bussiness_month(request):
 	# Get all bussiness months
 	months = BussinessMonth.objects.all()
 
-	#if no bussiness months, create else go to view
+	#if no bussiness months, create new month else go to view bussiness months
 	if not months:
 		form = BussinessMonthForm(request.POST)
 		if form.is_valid():
@@ -26,7 +26,6 @@ def view_bussiness_month(request):
 	""" View for bussiness month """
 
 	# Try to create new bussiness month
-	#BussinessMonth.any()
 	months = BussinessMonth.objects.all()
 
 	if months:
@@ -61,6 +60,8 @@ def view_bussiness_month(request):
 			"last_profit": last_month.profit
 			}
 		return render(request, "books/viewbussinessmonth.html", {"view": month_view})
+	
+	# create new bussiness month if none exists
 	return new_bussiness_month(request)	
 
 

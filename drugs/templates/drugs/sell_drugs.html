@@ -14,6 +14,7 @@
 		{% csrf_token %}
 		{{form|crispy}}
 		<span><input type="checkbox" name="tab-check" id="tab-check">Tab <br /></span>
+	
 		<button class="submit" type="submit" name="add_sale_list" value="add">Add Sale</button>
 		<button class="submit" type="submit" name="register_sale" value="register">Register Sale</button>
 	</form>

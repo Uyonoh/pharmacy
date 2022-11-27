@@ -5,12 +5,17 @@ from django.shortcuts import render
 from django.template import Context
 from django.views.generic import DetailView, ListView
 from django.views.generic.edit import FormView
-#from requests import request
+from django.urls import reverse
 from books.models import Credit, Debit, Stock
-from .forms import DrugForm, SaleForm
-from .models import Drug, Sale
+from .forms import DrugForm, SaleForm, TabletForm
+from .models import Drug, Sale, Tablet, Suspension, Injectable
 
 # Create your views here.
+
+
+# landing view is base/ bare drug form with state indicator
+# hold data and redirect to appropriate state page
+# collect relevant data, compile all data and save drug
 
 class index(FormView):
 	template_name = "add_drugs.html"
@@ -22,15 +27,88 @@ class index(FormView):
 		return super().form_valid(form)
 
 
-def update_stock_(drug, form):
+def update_stock_tab(drug, form):
 	form.instance.id = drug.id
 	new_stock_amount = form.instance.purchase_amount
-	no_tabs, no_cards = form.instance.tab_cd.split("/")
+	tablet = drug.tablet_set.all()[0]
+	no_tabs, no_cards = tablet.tab_cd.split("/")
 	no_tabs, no_cards = int(no_tabs), int(no_cards)
 
 	update_amount = new_stock_amount * no_tabs * no_cards
-	form.instance.stock_amount = drug.stock_amount + update_amount
-	form.instance.day_added = str(date.today())
+	drug.puchase_amount = new_stock_amount 					# Just because I can!!!
+	drug.stock_amount = drug.stock_amount + update_amount
+	drug.day_added = str(date.today())
+
+	tablet.set_price
+	drug.save()
+
+def dict_drug(drug):
+	drug_ = {}
+	drug_["drug_name"] = drug.drug_name
+	drug_["brand_name"] = drug.brand_name
+	drug_["drug_type"] = drug.drug_type
+	drug_["state"] = drug.state
+	drug_["weight"] = drug.weight
+	drug_["manufacturer"] = drug.manufacturer
+	drug_["exp_date"] = str(drug.exp_date)
+	drug_["stock_amount"] = drug.stock_amount
+	drug_["purchase_amount"] = drug.purchase_amount
+	drug_["units"] = drug.units
+	drug_["price"] = drug.price
+	drug_["category"] = drug.category
+	drug_["purpose"] = drug.purpose
+	drug_["location"] = drug.location
+	drug_["day_added"] = drug.day_added
+
+	return drug_
+
+def make_drug(drug):
+	drug_ = Drug()
+	
+	drug_.drug_name = drug["drug_name"]       
+	drug_.brand_name = drug["brand_name"]      
+	drug_.drug_type = drug["drug_type"]       
+	drug_.state = drug["state"]           
+	drug_.weight = drug["weight"]          
+	drug_.manufacturer = drug["manufacturer"]    
+	drug_.exp_date = drug["exp_date"]        
+	drug_.stock_amount = drug["stock_amount"]    
+	drug_.purchase_amount = drug["purchase_amount"]
+	drug_.units = drug["units"]           
+	drug_.price = drug["price"]           
+	drug_.category = drug["category"]        
+	drug_.purpose = drug["purpose"]         
+	drug_.location = drug["location"]        
+	drug_.day_added = drug["day_added"]       
+
+	if not drug_.stock_amount:
+		drug_.stock_amount = 0
+	return drug_
+
+def tab(request):
+	drug = make_drug(request.session["drug"])
+	if request.method =="POST":
+		form = TabletForm(request.POST)
+
+		if form.is_valid():
+			
+			print("save?")
+			# print(form.data)
+			# print(session)
+			# print(drug.data)
+			form.instance.drug = drug
+			
+			drug.save()
+			form.save()
+			
+
+			return HttpResponseRedirect(reverse("drugs:add"))
+			#return render(request, "../add", {"form":form})
+	else:
+		form = TabletForm()
+		print("not post")
+			# return render(request, "/add_drugs.html", {"form":form})
+	return render(request, "drugs/add_drugs.html", {"form":form})
 
 
 def add_drugs(request):
@@ -46,16 +124,25 @@ def add_drugs(request):
 			if not drug.count():
 				
 				form.save()
-				debit_stock(form.instance)
+				
+				if form.instance.state == "Tab":
+					request.session["drug"] = dict_drug(form.instance)
+					
+					return HttpResponseRedirect("add_drugs/tab")
+					return render(request, "drugs/add_drugs/tab", {"form":form})
+
+				# debit_stock(form.instance)
 			else:
 				drug = drug[0]
 				#form.instance.id = drug.id
 				#form.instance.stock_amount += drug.stock_amount
 
-				update_stock_(drug, form)
+				if form.instance.state == "Tab":
+					update_stock_tab(drug, form)
 
-				form.save(first_stock=False)
-				debit_stock(drug, price=price)
+				# form.save()
+				
+				# debit_stock(drug, price=price)
 			form = DrugForm()				
 		else:
 			err_msg = f"Oops! Invalid form: {form.errors.as_text()}"
@@ -68,7 +155,10 @@ def add_drugs(request):
 # Dispay price as drugs are selected for sale
 
 def sell_drugs(request):
-	print(request.user.is_authenticated)
+	# Determine if more than one drug is found with diff ststes before asking for state
+
+	states = {"Tab":Tablet, "Suspension":Suspension, "Injectable":Injectable}
+	# print(request.user.is_authenticated)
 	if request.method == "POST":
 		print(request.POST)
 		form = SaleForm(request.POST)
@@ -85,17 +175,34 @@ def sell_drugs(request):
 					form.add(drug)
 					#print("list")
 				elif request.POST.get("register_sale"):
-					is_tab = False
-					if request.POST.get("tab-check"):
-						is_tab = True
-					try:
-						form.add(drug, is_tab, register=True)
-						credit(form.instance, is_tab)
-					except ValueError:
-						if drug.out_of_stock == True:
-							err_msg = f"{drug.drug_name} is not available at the moment!"
-						else:
-							err_msg = "The amount sold is more than available.\nPlease try again!"
+					if request.POST.get("state") == "Tab":
+						is_tab = False
+						if request.POST.get("tab-check"):
+							is_tab = True
+						try:
+							# form.add(drug, is_tab, register=True)
+							form.instance.compute_tab(is_tab)
+							credit(form.instance)
+						except ValueError:
+							if drug.out_of_stock == True:
+								err_msg = f"{drug.drug_name} is not available at the moment!"
+							else:
+								err_msg = "The amount sold is more than available.\nPlease try again!"
+
+					state = request.POST.get("state")
+					
+
+					# is_tab = False
+					# if request.POST.get("tab-check"):
+					# 	is_tab = True
+					# try:
+					# 	form.add(drug, is_tab, register=True)
+					# 	credit(form.instance, is_tab)
+					# except ValueError:
+					# 	if drug.out_of_stock == True:
+					# 		err_msg = f"{drug.drug_name} is not available at the moment!"
+					# 	else:
+					# 		err_msg = "The amount sold is more than available.\nPlease try again!"
 					form = SaleForm()
 					
 					print("reg!")
@@ -103,10 +210,10 @@ def sell_drugs(request):
 				
 			else:
 				err_msg = "Drug not found!"
-		return render(request, "drugs/sell_drugs.html", {"form":form, "err_msg":err_msg})
+		return render(request, "drugs/sell_drugs.html", {"form":form, "err_msg":err_msg, "states":states})
 	else:
 		form = SaleForm()
-		return render(request, "drugs/sell_drugs.html", {"form":form})
+		return render(request, "drugs/sell_drugs.html", {"form":form, "states":states})
 
 
 def debit_stock(drug, price=0):
@@ -123,11 +230,11 @@ def debit_stock(drug, price=0):
 	_stock.price = price
 	_stock.save()
 
-def credit(drug, is_tab: Boolean):
+def credit(drug):
 	"""register credit"""
 	_credit = Credit()
 	_credit.item = str(drug)
-	_credit.amount = drug.compute(is_tab)
+	_credit.amount = drug.total_price
 	_credit.save()
 
 
