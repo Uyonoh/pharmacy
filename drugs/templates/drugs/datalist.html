@@ -1,0 +1,17 @@
+
+<div class="text-container">
+	<input type="text" list="{{widget.name}}" name="{{widget.name}}" placeholder="select" />
+	<datalist id="{{widget.name}}"  class="{{widget.value}}">
+		{% for group_name, group_choices, group_index in widget.optgroups %}
+			{% if group_name %}
+				<optgroup label="{{group_name}}">
+			{% endif %}
+			{% for options in group_choices %}
+				{% include options.template_name with option=options%}
+			{% endfor %}
+				</optgroup>
+			<!-- <option value="{{ group_choices.0.template_name}}">{{widget.label}}</option> -->
+		{% endfor %}
+	</datalist>
+	<!-- <p>{{widget.optgroups}}</p> -->
+</div>

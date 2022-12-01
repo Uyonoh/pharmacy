@@ -13,10 +13,14 @@
 	<form method="post" action="./sell_drugs">
 		{% csrf_token %}
 		{{form|crispy}}
+		{% if price %}
+			<label id="sale-price">$ {{price}}</label><br />
+		{% endif %}
 		<span><input type="checkbox" name="tab-check" id="tab-check">Tab <br /></span>
 	
 		<button class="submit" type="submit" name="add_sale_list" value="add">Add Sale</button>
 		<button class="submit" type="submit" name="register_sale" value="register">Register Sale</button>
 	</form>
 </div>
+
 {% endblock %}

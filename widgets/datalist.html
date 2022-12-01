@@ -1,0 +1,7 @@
+
+
+<datalist id="{{widget.name}}"{% include "django/forms/widgets/attrs.html" %}>
+	{% group_name, group_choices, group_index in widget.optgroups %}
+		<option value="{{group_name}}">{{group_name}}</option>
+	{% endfor %}
+</datalist>
