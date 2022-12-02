@@ -133,6 +133,11 @@ def add_drugs(request):
 		
 		# If the data is valid check if the drug with the same name, weight and exp_date exists
 		# If not save the drug and register debit, else update existing drug
+		# print(form)
+		print(hasattr(form, "brand_name"))
+		# for i in form._bound_items(): print(i)
+		
+
 		if form.is_valid():
 			drug = Drug.objects.filter(drug_name=form.instance.drug_name.upper(), weight=form.instance.weight, exp_date=form.instance.exp_date)
 			# print(form.fields['drug_name'])
@@ -142,7 +147,7 @@ def add_drugs(request):
 				request.session["drug"] = dict_drug(form.instance)
 				request.session["purchase_price"] = price
 				# form.save()
-				
+				# print(form)
 				if form.instance.state == "Tab":
 					
 					
@@ -174,6 +179,7 @@ def add_drugs(request):
 				debit_stock(drug, price=price)
 			form = DrugForm()				
 		else:
+			print("form")
 			err_msg = f"Oops! Invalid form: {form.errors.as_text()}"
 		
 	else:
