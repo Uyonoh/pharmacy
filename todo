@@ -1,0 +1,4 @@
+rename drugs.models set_amount > get_purchase_amount/get_amount
+units: plutals to singular
+rename all test_create_... > test_...
+Add profits per unit when entering drugs

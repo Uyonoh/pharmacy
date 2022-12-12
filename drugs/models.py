@@ -26,7 +26,7 @@ class Drug(models.Model):
 	units = models.CharField(max_length=30, choices=unit_choices, default="Packets")
 	# price = models.IntegerField()
 	# carton_price = models.IntegerField(null=True)
-	price = models.IntegerField()
+	price = models.DecimalField(max_digits=10, decimal_places=2)
 	category = models.CharField(max_length=30)
 	purpose = models.CharField(max_length=30)
 	location = models.CharField(max_length=10)
@@ -51,29 +51,32 @@ class Drug(models.Model):
 
 	def set_amount(self):
 		no_tabs, no_cards = self.get_tab_cd()
-		self.stock_amount = self.purchase_amount * int(no_cards) * int(no_tabs)
+		self.stock_amount = self.purchase_amount * int(no_tabs)
+
+		if self.units == "Unit":
+			self.stock_amount *= int(no_cards) 
 
 		if self.units == "Cartons":
 			self.stock_amount = self.stock_amount * self.no_packs
 
-	def set_price(self):
-		# self.price = self.price / int(self.get_tab_cd()[1])
-		print(self.price)
-		if self.units == "Cartons":
-			price = self.price / self.purchase_amount			#price per carton
-			price = price / self.no_packs			#price per pack
-			price = price / int(self.get_tab_cd()[1])			#price per card
-			self.price = price
-		else:
-			price  = self.price / self.purchase_amount			#price per pack
-			print(price)
-			print(f"amount - {self.purchase_amount}")
-			price = price / int(self.get_tab_cd()[1])	
-			print(price)		#price per card
-			print(f'cd - {self.get_tab_cd()[1]}')
-			self.price = price
+	# def set_price(self):
+	# 	# self.price = self.price / int(self.get_tab_cd()[1])
+	# 	print(self.price)
+	# 	if self.units == "Cartons":
+	# 		price = self.price / self.purchase_amount			#price per carton
+	# 		price = price / self.no_packs			#price per pack
+	# 		price = price / int(self.get_tab_cd()[1])			#price per card
+	# 		self.price = price
+	# 	else:
+	# 		price  = self.price / self.purchase_amount			#price per pack
+	# 		print(price)
+	# 		print(f"amount - {self.purchase_amount}")
+	# 		price = price / int(self.get_tab_cd()[1])	
+	# 		print(price)		#price per card
+	# 		print(f'cd - {self.get_tab_cd()[1]}')
+	# 		self.price = price
 		
-		return True
+	# 	return True
 
 	def sell(self, amount: int, is_tab: Boolean):
 		self.stock_amount -= amount
@@ -112,38 +115,43 @@ class Tablet(models.Model):
 
 	def set_amount(self):
 		no_tabs, no_cards = self.get_tab_cd()
-		amount = self.drug.purchase_amount * int(no_cards) * int(no_tabs)
+		amount = self.drug.purchase_amount * int(no_tabs)
+
+		if self.drug.units == "Packets":
+			amount *= int(no_cards) 
 
 		if self.drug.units == "Cartons":
-			amount = amount * self.no_packs
+			amount = amount * self.no_packs * int(no_cards) 
+
 		return amount
 
 	def set_price(self):
-		# self.price = self.price / int(self.get_tab_cd()[1])
-		# print(self.price)
 		price  = self.drug.price / self.drug.purchase_amount # price per carton or pack
-		if self.drug.units == "Cartons":
+		if self.drug.units == "Packets":
+			price = price / int(self.get_tab_cd()[1])	
+			
+		elif self.drug.units == "Cartons":
 			price = price / self.no_packs			#price per pack
 			price = price / int(self.get_tab_cd()[1])			#price per card
-			self.drug.price = price
-		else:
-			# print(price)
-			# print(f"amount - {self.drug.purchase_amount}")
-			price = price / int(self.get_tab_cd()[1])	
-			print(price)		#price per card
-			print(f'cd - {self.get_tab_cd()[1]}')
-			self.drug.price = price
-		
-		return True
+			
+		self.drug.price = price
+		return price
 
-	def sell(self, amount: int, is_tab: Boolean):
+	def sell(self, amount: int, units="Units", is_tab: Boolean=False):
 		if is_tab:
 			self.drug.stock_amount -= amount
 		else:
 			no_tabs, no_cards = self.get_tab_cd()
 			amount = amount * int(no_tabs)
+
+			if units == "Packets":
+				amount *= int(no_cards)
+			elif units == "Cartons":
+				amount *= int(no_cards)
+				amount *= self.no_packs
+
 			self.drug.stock_amount -= amount
-			if self.drug.stock_amount == 0 and self.remainder == 0:
+			if self.drug.stock_amount == 0:
 				self.drug.out_of_stock = True
 			elif self.drug.stock_amount < 0:
 				raise ValueError(f"amount {amount} greater than stock amount")
@@ -162,13 +170,19 @@ class Tablet(models.Model):
 			self.manufacturer, self.exp_date, self.stock_tab_cd(), self.price, self.category, self.purpose,
 			self.location, self.day_added, self.out_of_stock, self.expired)
 
-	def update_stock(self, new_amount):
+	def update_stock(self, new_amount, units, price):
 		self.drug.purchase_amount = new_amount
+		self.drug.units = units
+		old_price = self.drug.price
+		self.drug.price = price
+		if not price == old_price:
+			self.drug.old_price = old_price
 		self.drug.save()
 		new_amount = self.set_amount()
 		self.drug.stock_amount += new_amount
+		self.set_price()
 		self.drug.save()
-
+		
 	def __str__(self):
 		return f" {self.drug.drug_name} Tablet: A drug for {self.drug.purpose} located at {self.drug.location}.\
 			 Expires: {self.drug.exp_date} "
@@ -212,6 +226,7 @@ class Suspension(models.Model):
 			amount *= self.no_bottles
 		elif self.drug.units == "Cartons":
 			amount *= self.no_packs
+			amount *= self.no_bottles
 		return amount
 
 	def set_price(self):
@@ -219,14 +234,21 @@ class Suspension(models.Model):
 		if self.drug.units == "Cartons":
 			price = price / self.no_packs			#price per pack
 			price = price / self.no_bottles			#price per bottle	
-		elif self.drug.units == "Packet":			
+		elif self.drug.units == "Packets":			
 			price = price / self.no_bottles		#price per card
 		self.drug.price = price
-		return True
+		return price
 	
-	def sell(self, amount: int):
+	def sell(self, amount: int, units="Units"):
+		
+		if units == "Packets":
+			amount *= self.no_bottles
+		elif units == "Cartons":
+			amount *= self.no_bottles
+			amount *= self.no_packs
+   
 		self.drug.stock_amount -= amount
-		if self.drug.stock_amount == 0 and self.remainder == 0:
+		if self.drug.stock_amount == 0:
 			self.drug.out_of_stock = True
 		elif self.drug.stock_amount < 0:
 			raise ValueError(f"amount {amount} greater than stock amount")
@@ -245,11 +267,17 @@ class Suspension(models.Model):
 			self.manufacturer, self.exp_date, self.stock_tab_cd(), self.price, self.category, self.purpose,
 			self.location, self.day_added, self.out_of_stock, self.expired)
 
-	def update_stock(self, new_amount):
+	def update_stock(self, new_amount, units, price):
 		self.drug.purchase_amount = new_amount
-		self.drug.save()
+		self.drug.units = units
+		old_price = self.drug.price
+		self.drug.price = price
+		if not price == old_price:
+			self.drug.old_price = old_price
+		# self.drug.save()
 		new_amount = self.set_amount()
 		self.drug.stock_amount += new_amount
+		self.set_price()
 		self.drug.save()
 
 	def __str__(self):
@@ -268,6 +296,7 @@ class Injectable(models.Model):
 			amount *= self.no_bottles
 		elif self.drug.units == "Cartons":
 			amount *= self.no_packs
+			amount *= self.no_bottles
 		return amount
 
 	def set_price(self):
@@ -275,14 +304,21 @@ class Injectable(models.Model):
 		if self.drug.units == "Cartons":
 			price = price / self.no_packs			#price per pack
 			price = price / self.no_bottles			#price per bottle	
-		elif self.drug.units == "Packet":			
+		elif self.drug.units == "Packets":			
 			price = price / self.no_bottles		#price per card
 		self.drug.price = price
-		return True
-
-	def sell(self, amount: int):
+		return price
+	
+	def sell(self, amount: int, units="Units"):
+		
+		if units == "Packets":
+			amount *= self.no_bottles
+		elif units == "Cartons":
+			amount *= self.no_bottles
+			amount *= self.no_packs
+   
 		self.drug.stock_amount -= amount
-		if self.drug.stock_amount == 0 and self.remainder == 0:
+		if self.drug.stock_amount == 0:
 			self.drug.out_of_stock = True
 		elif self.drug.stock_amount < 0:
 			raise ValueError(f"amount {amount} greater than stock amount")
@@ -301,11 +337,17 @@ class Injectable(models.Model):
 			self.manufacturer, self.exp_date, self.stock_tab_cd(), self.price, self.category, self.purpose,
 			self.location, self.day_added, self.out_of_stock, self.expired)
 
-	def update_stock(self, new_amount):
+	def update_stock(self, new_amount, units, price):
 		self.drug.purchase_amount = new_amount
-		self.drug.save()
+		self.drug.units = units
+		old_price = self.drug.price
+		self.drug.price = price
+		if not price == old_price:
+			self.drug.old_price = old_price
+		# self.drug.save()
 		new_amount = self.set_amount()
 		self.drug.stock_amount += new_amount
+		self.set_price()
 		self.drug.save()
 
 
@@ -337,11 +379,12 @@ class Sale(models.Model):
 		
 
 	def sell_suspension(self, **kwargs):
+		
 		self.total_price = self.drug.price * self.amount
-
+		self.drug.suspension_set.all()[0].sell(self.amount)
 		self.save()
 
 	def sell_injectable(self, **kwargs):
 		self.total_price = self.drug.price * self.amount
-
+		self.drug.injectable_set.all()[0].sell(self.amount)
 		self.save()

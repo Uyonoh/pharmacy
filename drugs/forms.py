@@ -241,7 +241,7 @@ class InjectableForm(forms.ModelForm):
 
 class SaleForm(forms.ModelForm):
 	# state = ChoiceField(choices=units_list, list=True)
-	state = ChoiceField(widget=DataList, choices=units_list, list=True)
+	state = forms.ChoiceField( choices=state_choices)
 	# status = ChoiceField(widget=DataList, choices=units_list, list=True)
 	drug_name = ModelChoiceField(model=Drug, field="drug_name")
 	brand_name = ModelChoiceField(model=Drug, field="brand_name")

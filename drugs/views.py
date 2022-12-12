@@ -171,10 +171,10 @@ def add_drugs(request):
 					drug.tablet_set.all()[0].update_stock(form.instance.purchase_amount)
 					# update_stock_tab(drug, form)
 				elif form.instance.state == "Suspension":
-					drug.suspension_set.all()[0].update_stock(form.instance.purchase_amount)
+					drug.suspension_set.all()[0].update_stock(form.instance.purchase_amount, form.instance.units, form.instance.price)
 
 				else:
-					drug.injectable_set.all()[0].update_stock(form.instance.purchase_amount)
+					drug.injectable_set.all()[0].update_stock(form.instance.purchase_amount, form.instance.units, form.instance.price)
 				
 				debit_stock(drug, price=price)
 			form = DrugForm()				

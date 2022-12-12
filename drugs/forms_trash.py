@@ -13,6 +13,9 @@
 
 
 
+from django import forms
+
+
 class ListChoiceWidget(forms.widgets.ChoiceWidget):
 	input_type = "data_class"
 	template_name = "drugs/datalist.html"
