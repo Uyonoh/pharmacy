@@ -1,0 +1,61 @@
+{% extends "main/base.html" %}
+{% load static %}
+<script src="{% static 'drugs/js/myscript.js' %}" defer></script>
+
+{% block content %}
+<style>
+    .container {
+    display: flex;
+    align-content: center;
+    justify-content: center;
+    }
+
+    .drug div{
+        text-align: left;
+    }
+</style>
+<div class="container">
+    <div class="drug" id="{{drug.pk}}">
+        <div>Drug Name: {{drug.drug_name}} </div>
+        <div>Brand Name: {{drug.brand_name}} </div>
+        <div>mg/ml: {{drug.weight}} </div>
+        <div>Produced by: {{drug.manufacturer}} </div>
+        <div>Amount in stock: {{drug.clean_stock}} {{drug.get_unit}} </div>
+        <div>Unit price: {{drug.price}} </div>
+        <div>Expiry Date: {{drug.exp_date}}. [[ {{drug.check_exp}} days left ]]. </div>
+
+        <div class="submit">
+            <button class="submit sell" type="button" onclick="toSale()">Sell Drug</button>
+            <button class="submit restock" type="button" onclick="toRestock()">Restock</button>
+            <button class="submit edit" type="button" onclick="toEdit()">Edit</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toSale(){
+        var pk = document.querySelector(".drug").id
+        var win = pk + "/sell"
+        console.log(win)
+	    window.open(win, "_self");
+        // window.close();
+}
+
+    function toRestock(){
+        var pk = document.querySelector(".drug").id
+        var win = "add_drugs/" + pk.toString()
+        console.log(win)
+	    var win = window.open(win, "_self");
+        // win.close();
+    }
+
+    function toEdit(){
+        var pk = document.querySelector(".drug").id
+        var win = "edit/" + pk.toString()
+        console.log(win)
+	    var win = window.open(win, "_self");
+        // win.close();
+    }
+
+</script>
+{% endblock %}

@@ -1,7 +1,7 @@
 from datetime import date
 from xmlrpc.client import Boolean
-from django import forms
 from django.db import models
+from django.utils import timezone as tz
 from django.contrib.auth.models import User
 
 # Create your models here.
@@ -26,11 +26,12 @@ class Drug(models.Model):
 	units = models.CharField(max_length=30, choices=unit_choices, default="Packets")
 	# price = models.IntegerField()
 	# carton_price = models.IntegerField(null=True)
-	price = models.DecimalField(max_digits=10, decimal_places=2)
+	price = models.DecimalField(max_digits=10, decimal_places=2) #sale_price
+	cost_price = models.DecimalField(max_digits=10, decimal_places=2)
 	category = models.CharField(max_length=30)
 	purpose = models.CharField(max_length=30)
 	location = models.CharField(max_length=10)
-	day_added = models.DateField(null=False, auto_now_add=True)
+	day_added = models.DateField(null=False, default=str(tz.now().date()))
 	out_of_stock = models.BooleanField(default=False)
 	expired = models.BooleanField(default=False, null=True)
 
@@ -39,12 +40,33 @@ class Drug(models.Model):
 		diff = self.exp_date - date.today()
 		days = diff.days
 		return days
+	
+	def clean_stock(self):
+		if self.state == "Tab":
+			tb, cd = self.Tablet.get_tab_cd()
+			tb, cd = int(tb), int(cd)
+			# if self.units == "Packets":
+			# 	amount = self.stock_amount / cd
+			amount = self.stock_amount / tb
+			if amount < 1:
+				amount = str(self.stock_amount) + " tab(s)"
+			return amount
+		return self.stock_amount
 
 	def expired(self):
 		return self.check_exp() <= 0
 	
 	def expire_soon(self):
 		return self.check_exp() <= 90
+	
+	def get_unit(self):
+		""" Get the base unit of the drug """
+		if self.state == "Tab":
+			return "card(s)"
+		# elif self.state == "Suspension":
+		# 	return " Bottle(S)"
+		else:
+			return ("bottle(s)")
 
 	def relocate(self, new_location: str):
 		self.location = new_location
@@ -92,12 +114,24 @@ class Drug(models.Model):
 	# 	return super(Drug, self).save()
 
 	def tabulate(self):
-		return (self.drug_name, self.brand_name, self.drug_type, self.weight,
-			self.manufacturer, self.exp_date, self.stock_amount, self.price, self.category, self.purpose,
+		return (self.drug_name, self.brand_name, self.drug_type, self.state, self.weight,
+			self.manufacturer, self.exp_date, self.clean_stock(), self.price, self.category, self.purpose,
 			self.location, self.day_added, self.out_of_stock, self.expired)
 
 	def update_stock(self, new_amount):
 		pass
+
+	@property
+	def Tablet(self):
+		return self.tablet_set.all()[0]
+
+	@property
+	def Suspension(self):
+		return self.suspension_set.all()[0]
+
+	@property
+	def Injectable(self):
+		return self.injectable_set.all()[0]
 
 	def __str__(self):
 		return f" {self.drug_name}: A drug for {self.purpose} located at {self.location}.\
@@ -125,8 +159,10 @@ class Tablet(models.Model):
 
 		return amount
 
-	def set_price(self):
-		price  = self.drug.price / self.drug.purchase_amount # price per carton or pack
+	def set_price(self, price=0):
+		if not price:
+			price = self.drug.cost_price
+		price  = price / self.drug.purchase_amount # price per carton or pack
 		if self.drug.units == "Packets":
 			price = price / int(self.get_tab_cd()[1])	
 			
@@ -134,7 +170,7 @@ class Tablet(models.Model):
 			price = price / self.no_packs			#price per pack
 			price = price / int(self.get_tab_cd()[1])			#price per card
 			
-		self.drug.price = price
+		self.drug.cost_price = price
 		return price
 
 	def sell(self, amount: int, units="Units", is_tab: Boolean=False):
@@ -151,19 +187,19 @@ class Tablet(models.Model):
 				amount *= self.no_packs
 
 			self.drug.stock_amount -= amount
-			if self.drug.stock_amount == 0:
-				self.drug.out_of_stock = True
-			elif self.drug.stock_amount < 0:
-				raise ValueError(f"amount {amount} greater than stock amount")
+		if self.drug.stock_amount == 0:
+			self.drug.out_of_stock = True
+		elif self.drug.stock_amount < 0:
+			raise ValueError(f"amount {amount} greater than stock amount")
 		self.drug.save()
 
-	def save(self, first_stock=True, sale=False):
+	def save(self, first_stock=True, sale=False, **kwargs):
 		if not sale:
 			self.set_price()
 		if first_stock:
 			self.drug.stock_amount = self.set_amount()
 		self.drug.save()
-		return super(Tablet, self).save()
+		return super(Tablet, self).save(**kwargs)
 
 	def tabulate(self):
 		return (self.drug_name, self.brand_name, self.drug_type, self.weight,
@@ -180,7 +216,7 @@ class Tablet(models.Model):
 		self.drug.save()
 		new_amount = self.set_amount()
 		self.drug.stock_amount += new_amount
-		self.set_price()
+		self.set_price(price)
 		self.drug.save()
 		
 	def __str__(self):
@@ -200,6 +236,10 @@ class Tablet(models.Model):
 	@property
 	def card_price(self):
 		return self.price
+	
+	@property
+	def ntabs(self):
+		return self.get_tab_cd()[0]
 
 	@property
 	def pack_price(self):
@@ -213,6 +253,10 @@ class Tablet(models.Model):
 		price = price * int(self.get_tab_cd()[1]) * self.no_packs
 
 		return price
+	
+	@property
+	def stock_amt(self):
+		return self.stock_amount / self.get_tab_cd()[0]
 
 
 class Suspension(models.Model):
@@ -229,8 +273,10 @@ class Suspension(models.Model):
 			amount *= self.no_bottles
 		return amount
 
-	def set_price(self):
-		price = self.drug.price / self.drug.purchase_amount	
+	def set_price(self, price=0):
+		if not price:
+			price = self.drug.cost_price
+		price  = price / self.drug.purchase_amount
 		if self.drug.units == "Cartons":
 			price = price / self.no_packs			#price per pack
 			price = price / self.no_bottles			#price per bottle	
@@ -277,7 +323,7 @@ class Suspension(models.Model):
 		# self.drug.save()
 		new_amount = self.set_amount()
 		self.drug.stock_amount += new_amount
-		self.set_price()
+		self.set_price(price)
 		self.drug.save()
 
 	def __str__(self):
@@ -299,8 +345,10 @@ class Injectable(models.Model):
 			amount *= self.no_bottles
 		return amount
 
-	def set_price(self):
-		price = self.drug.price / self.drug.purchase_amount	
+	def set_price(self, price=0):
+		if not price:
+			price = self.drug.cost_price
+		price  = price / self.drug.purchase_amount
 		if self.drug.units == "Cartons":
 			price = price / self.no_packs			#price per pack
 			price = price / self.no_bottles			#price per bottle	
@@ -347,7 +395,7 @@ class Injectable(models.Model):
 		# self.drug.save()
 		new_amount = self.set_amount()
 		self.drug.stock_amount += new_amount
-		self.set_price()
+		self.set_price(price)
 		self.drug.save()
 
 
@@ -367,24 +415,32 @@ class Sale(models.Model):
 	def __str__(self):
 		return f"Sale of {self.drug_name}"
 	
-	def sell_tab(self, **kwargs):
+	def sell_tab(self, units="Unit", **kwargs):
 		is_tab = kwargs["is_tab"]
-		self.total_price = self.drug.price * self.amount
+		self.total_price = kwargs["price"]
+
+		# self.total_price = self.drug.price * self.amount
 		if is_tab:
-			self.total_price = self.total_price / int(self.drug.Tablet.get_tab_cd()[0])
+			# self.total_price = self.total_price / int(self.drug.Tablet.get_tab_cd()[0])
 			self.drug_name += " - TAB"
+		else:
+			temp = self.amount
+			self.amount *= int(self.drug.Tablet.get_tab_cd()[0])
 		
-		self.drug.tablet_set.all()[0].sell(self.amount, is_tab)
+		self.drug.tablet_set.all()[0].sell(self.amount, is_tab, units)
+
+		if not is_tab:
+			self.amount = temp
 		self.save()
 		
 
-	def sell_suspension(self, **kwargs):
+	def sell_suspension(self, units="Unit", **kwargs):
 		
 		self.total_price = self.drug.price * self.amount
-		self.drug.suspension_set.all()[0].sell(self.amount)
+		self.drug.suspension_set.all()[0].sell(self.amount, units)
 		self.save()
 
-	def sell_injectable(self, **kwargs):
+	def sell_injectable(self, units="Unit", **kwargs):
 		self.total_price = self.drug.price * self.amount
-		self.drug.injectable_set.all()[0].sell(self.amount)
+		self.drug.injectable_set.all()[0].sell(self.amount, units)
 		self.save()

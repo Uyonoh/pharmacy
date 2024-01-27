@@ -28,11 +28,11 @@
 			</thead>
 				{% for drug in drugs %}
 					{% if drug.expired %}
-					<tr class="expired">
+					<tr id="{{drug.pk}}" class="expired drug">
 					{% elif drug.expire_soon %}
-					<tr class="exp-soon">
+					<tr id="{{drug.pk}}" class="exp-soon drug">
 					{% else %}
-					<tr class="exp-far">
+					<tr id="{{drug.pk}}" class="exp-far drug">
 					{% endif %}
 				
 					{% for item in drug.tabulate %}
@@ -45,5 +45,22 @@
 	{% else %}
 
 	{% endif %}
+	<script>
+		var rows = document.querySelectorAll(".drug")
+		
+		rows.forEach(row => {
+			var pk = row.id;
+			row.addEventListener("click", function() {
+				window.open(pk);
+			})
+		});
+
+
+		// function opens(row) {
+		// 	pk = row.id
+		// 	console.log(pk)
+		// 	window.open(pk)
+		// }
+	</script>
 	
 {% endblock %}

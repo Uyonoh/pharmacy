@@ -1,0 +1,97 @@
+{% extends 'main/base.html' %}
+{% load static %}
+<script src="{% static 'drugs/js/myscript.js' %}" defer></script>
+
+{% block content %}
+{% load crispy_forms_tags %}
+
+<div class="form-container">
+	{% if err_msg %}
+		
+		<p class="err_msg">{{err_msg}}</p>
+	{% endif %}
+	<form method="post" action="./sell">
+        {% csrf_token %}
+        
+        {{form|crispy}}
+
+		<label name="price"  id="price">$ {{drug.price}}</label><br />
+		<!-- <span><input type="checkbox" name="tab-check" id="tab-check">Tab <br /></span> -->
+	
+		<button class="submit" type="submit" name="add_sale_list" value="add">Add Sale</button>
+		<button class="submit" type="submit" name="register_sale" value="register">Register Sale</button>
+	</form>
+    {% if drug.state == "Tab" %}
+    <p class="hidden">{{drug.Tablet.ntabs}}</p>
+    {% endif %}
+</div>
+
+<script>
+
+    amount = document.querySelector("#id_amount");
+    price_handle = document.querySelector("#price");
+    price_input = document.querySelector("#id_price");
+    basePrice = price_handle.innerHTML.slice(1);
+
+    function updatePrice() {
+        price = basePrice * amount.value;
+        price_handle.innerHTML = "$" + price.toString();
+        price_input.value = price;
+    }
+    try {
+        ntabs = document.querySelector(".hidden").innerHTML;   
+    } catch (error) {
+        console.log("Not tab!")
+    }
+    // console.log(basePrice)
+
+    window.addEventListener("load", function () {
+        price_input.value = basePrice * amount.value
+    })
+
+    amount.addEventListener("change", function () {
+        updatePrice();
+    })
+
+    tab_handle = document.querySelector("#id_tab_state");
+    tab_handle.addEventListener("click", function () {
+        if (tab_handle.checked == true) {
+            basePrice /= ntabs;
+        } else {
+            basePrice *= ntabs;
+        }
+        updatePrice();
+    })
+
+</script>
+{% endblock %}
+
+
+<div>
+    <label for="drug_name">Drug Name</label><br />
+    <input type="text" name="drug_name" id="drug_name" value="{{drug.drug_name}}">
+</div>
+
+
+<div>
+    <label for="">Brand Name</label><br />
+    <input type="text" name="" id="brand_name" value="{{drug.brand_name}}">
+</div>
+
+
+<div>
+    <label for="">Weight</label><br />
+    <input type="number" name="" id="weight" value="{{drug.weight}}">
+</div>
+
+
+<div>
+    <label for="">Amount</label><br />
+    <input type="number" name="" id="amount">
+</div>
+
+
+<div>
+    <label for="">State</label><br />
+    <input type="text" name="" id="state" value="{{drug.state}}">
+</div>

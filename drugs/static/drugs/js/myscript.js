@@ -14,10 +14,11 @@ function toggleTabCd(){
 	}
 }
 
+
 var handle = document.querySelector("form div select");
 //handle.onclick = toggleTabCd();
 
-handle.addEventListener("click", toggleTabCd);
+// handle.addEventListener("click", toggleTabCd);
 
 var drugName = document.querySelector("div #div_id_drug_name input");
 var brandName = document.querySelector("div #div_id_brand_name input");

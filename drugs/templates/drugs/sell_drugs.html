@@ -13,14 +13,38 @@
 	<form method="post" action="./sell_drugs">
 		{% csrf_token %}
 		{{form|crispy}}
-		{% if price %}
-			<label id="sale-price">$ {{price}}</label><br />
+		{% if drug.price %}
+			<label id="price">$ {{drug.price}}</label><br />
 		{% endif %}
 		<span><input type="checkbox" name="tab-check" id="tab-check">Tab <br /></span>
 	
 		<button class="submit" type="submit" name="add_sale_list" value="add">Add Sale</button>
 		<button class="submit" type="submit" name="register_sale" value="register">Register Sale</button>
 	</form>
+	<p class="hidden">{{drug.Tablet.ntabs}}</p>
 </div>
+
+<script>
+    amount = document.querySelector("#id_amount");
+    price_handle = document.querySelector("#price");
+    basePrice = price_handle.innerHTML.slice(1);
+    ntabs = document.querySelector(".hidden").innerHTML;
+    // console.log(basePrice)
+
+    amount.addEventListener("change", function () {
+        price = basePrice * amount.value;
+        price_handle.innerHTML = "$" + price.toString();
+    })
+
+    tab_handle = document.querySelector("#tab-check");
+    tab_handle.addEventListener("click", function () {
+        if (tab_handle.checked == true) {
+            basePrice /= ntabs;
+        } else {
+            basePrice *= ntabs;
+        }
+    })
+</script>
+
 
 {% endblock %}
