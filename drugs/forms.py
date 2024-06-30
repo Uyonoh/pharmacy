@@ -1,6 +1,7 @@
 from .models import Drug, Sale, Tablet, Suspension, Injectable, state_choices
 from .customs import *
 from django import forms
+from django.utils import timezone as tz
 
 unit_choices = (("Cartons", "Cartons"), ("Packets", "Packets"), ("Sachets", "Sachets"))
 units_list = ["cart", "pack", "sach"]
@@ -113,6 +114,8 @@ class SalesForm(forms.ModelForm):
 	state = forms.CharField(max_length=30, label="State")
 	price = forms.FloatField(label="Price")
 	tab_state = forms.BooleanField(required=False, label="Tab")
+	time_toggle = forms.BooleanField(required=False, label="Change Time")
+	sale_time = forms.DateTimeField(initial=tz.now())
 	# price = forms.HiddenInput()
 
 	# # status = ChoiceField(widget=DataList, choices=units_list, list=True)

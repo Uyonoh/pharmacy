@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-!z4_r*)k-uz182il8xhttz($9%b^(1_1suyravkuk2%gj(slhu
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', '192.168.43.202']
 
 
 # Application definition
@@ -84,20 +84,20 @@ WSGI_APPLICATION = 'pharmacy.wsgi.application'
 
 DATABASES = {
     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-# 		'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.sqlite3',
+		'NAME': BASE_DIR / 'db.sqlite3',
 # 	}
 # }
 
-		'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'live',
-		'USER': 'postgres',
-		'PASSWORD': 'if(Post1)open',
-		'HOST': 'localhost',
-		'PORT': '5432',
-		'TEST':{
-			'NAME':'db.testdatabase',
-		},
+		# 'ENGINE': 'django.db.backends.postgresql',
+        # 'NAME': 'live',
+		# 'USER': 'postgres',
+		# 'PASSWORD': 'if(Post1)open',
+		# 'HOST': 'localhost',
+		# 'PORT': '5432',
+		# 'TEST':{
+		# 	'NAME':'db.testdatabase',
+		# },
     },
 }
 

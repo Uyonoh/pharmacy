@@ -1,0 +1,54 @@
+{% extends "main/base.html" %}
+
+{% block content %}
+	<!-- <table class="drug-list">
+		{ for column_name in drugs %}
+		<h>{{column_name}}</th>
+		{ end for %}
+		{ for column %}
+	</table> -->
+	{% if drugs %}
+	
+		<table>
+			<thead>
+				{% for heading in headings %}
+					<th>{{heading.upper}}</th>
+				{% endfor %}
+			</thead>
+				{% for drug in drugs %}
+				    <tr id="{{drug.pk}}" class="drug">
+					{% for item in drug.tabulate_stock %}
+						<td>{{item}}</td>
+					{% endfor %}
+					</tr>
+				
+				{% endfor %}
+		</table>
+	{% else %}
+
+	{% endif %}
+	<script>
+		var rows = document.querySelectorAll(".drug")
+
+		function openDetails(pk) {
+				window.open(pk);
+			}
+		
+		function handleDetails(e, pk){
+			openDetails(pk);
+		}
+		
+		rows.forEach(row => {
+			var pk = row.id;
+			row.addEventListener("click", (e) => {handleDetails(e, pk)})
+		});
+
+
+		// function opens(row) {
+		// 	pk = row.id
+		// 	console.log(pk)
+		// 	window.open(pk)
+		// }
+	</script>
+	
+{% endblock %}

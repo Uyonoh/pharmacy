@@ -27,12 +27,16 @@
 				<th>Expired</th>
 			</thead>
 				{% for drug in drugs %}
-					{% if drug.expired %}
-					<tr id="{{drug.pk}}" class="expired drug">
-					{% elif drug.expire_soon %}
-					<tr id="{{drug.pk}}" class="exp-soon drug">
+					{% if drug.check_oos %}
+					<tr id="{{drug.pk}}" class="oos drug">
 					{% else %}
-					<tr id="{{drug.pk}}" class="exp-far drug">
+						{% if drug.expired %}
+						<tr id="{{drug.pk}}" class="expired drug">
+						{% elif drug.expire_soon %}
+						<tr id="{{drug.pk}}" class="exp-soon drug">
+						{% else %}
+						<tr id="{{drug.pk}}" class="exp-far drug">
+						{% endif %}
 					{% endif %}
 				
 					{% for item in drug.tabulate %}

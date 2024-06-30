@@ -16,14 +16,14 @@ class Drug(models.Model):
 	""" Base drug class """
 	drug_name = models.CharField(max_length=30)
 	brand_name = models.CharField(max_length=30)
-	drug_type = models.CharField(max_length=10)
-	state = models.CharField(max_length=20, choices=state_choices, default="Tab")
+	drug_type = models.CharField(max_length=20)
+	state = models.CharField(max_length=20, choices=state_choices, default="Suspension")
 	weight = models.CharField(max_length=10)
 	manufacturer = models.CharField(max_length=30)
 	exp_date = models.DateField("Expiery Date")
 	stock_amount = models.IntegerField()
 	purchase_amount = models.IntegerField()
-	units = models.CharField(max_length=30, choices=unit_choices, default="Packets")
+	units = models.CharField(max_length=30, choices=unit_choices, default="Unit")
 	# price = models.IntegerField()
 	# carton_price = models.IntegerField(null=True)
 	price = models.DecimalField(max_digits=10, decimal_places=2) #sale_price
@@ -31,7 +31,7 @@ class Drug(models.Model):
 	category = models.CharField(max_length=30)
 	purpose = models.CharField(max_length=30)
 	location = models.CharField(max_length=10)
-	day_added = models.DateField(null=False, default=str(tz.now().date()))
+	day_added = models.DateField(null=False, default="2024-02-27")#str(tz.now().date()))
 	out_of_stock = models.BooleanField(default=False)
 	expired = models.BooleanField(default=False, null=True)
 
@@ -40,6 +40,14 @@ class Drug(models.Model):
 		diff = self.exp_date - date.today()
 		days = diff.days
 		return days
+	
+	def check_oos(self):
+		if self.stock_amount <= 0:
+			self.out_of_stock = True
+			return True
+		else:
+			self.out_of_stock = False
+			return False
 	
 	def clean_stock(self):
 		if self.state == "Tab":
@@ -117,9 +125,30 @@ class Drug(models.Model):
 		return (self.drug_name, self.brand_name, self.drug_type, self.state, self.weight,
 			self.manufacturer, self.exp_date, self.clean_stock(), self.price, self.category, self.purpose,
 			self.location, self.day_added, self.out_of_stock, self.expired)
+	
+	def tabulate_stock(self):
+		return (self.drug_name, self.brand_name, self.drug_type, self.state, self.weight,
+			self.manufacturer, self.exp_date, self.clean_stock(), self.price)
 
 	def update_stock(self, new_amount):
 		pass
+
+	def update(self, form):
+		self.drug_name       = form["drug_name"].value()
+		self.brand_name      = form["brand_name"].value()     
+		self.drug_type       = form["drug_type"].value()      
+		self.state           = form["state"].value()          
+		self.weight          = form["weight"].value()         
+		self.manufacturer    = form["manufacturer"].value()   
+		self.exp_date        = form["exp_date"].value()       
+		self.purchase_amount = form["purchase_amount"].value()
+		self.units           = form["units"].value()                       
+		self.price           = form["sale_price"].value()          
+		self.cost_price      = form["cost_price"].value()     
+		self.category        = form["category"].value()       
+		self.purpose         = form["purpose"].value()        
+		self.location        = form["location"].value()       
+	     
 
 	@property
 	def Tablet(self):
@@ -171,6 +200,7 @@ class Tablet(models.Model):
 			price = price / int(self.get_tab_cd()[1])			#price per card
 			
 		self.drug.cost_price = price
+		self.drug.price = price
 		return price
 
 	def sell(self, amount: int, units="Units", is_tab: Boolean=False):
@@ -261,8 +291,8 @@ class Tablet(models.Model):
 
 class Suspension(models.Model):
 	drug = models.ForeignKey(Drug, on_delete=models.CASCADE)
-	no_bottles = models.IntegerField(null=True)
-	no_packs = models.IntegerField(null=True, default=0)
+	no_bottles = models.IntegerField(null=True, default=10)
+	no_packs = models.IntegerField(null=True, default=1)
 
 	def set_amount(self):
 		amount = self.drug.purchase_amount
@@ -282,6 +312,8 @@ class Suspension(models.Model):
 			price = price / self.no_bottles			#price per bottle	
 		elif self.drug.units == "Packets":			
 			price = price / self.no_bottles		#price per card
+		
+		self.drug.cost_price = price
 		self.drug.price = price
 		return price
 	
@@ -333,8 +365,8 @@ class Suspension(models.Model):
 
 class Injectable(models.Model):
 	drug = models.ForeignKey(Drug, on_delete=models.CASCADE)
-	no_bottles = models.IntegerField(null=True)
-	no_packs = models.IntegerField(null=True, default=0)
+	no_bottles = models.IntegerField(null=True, default=10)
+	no_packs = models.IntegerField(null=True, default=1)
 
 	def set_amount(self):
 		amount = self.drug.purchase_amount
@@ -354,6 +386,8 @@ class Injectable(models.Model):
 			price = price / self.no_bottles			#price per bottle	
 		elif self.drug.units == "Packets":			
 			price = price / self.no_bottles		#price per card
+
+		self.drug.cost_price = price
 		self.drug.price = price
 		return price
 	
@@ -410,7 +444,7 @@ class Sale(models.Model):
 	weight = models.CharField(max_length=10)
 	amount = models.IntegerField(default=1)
 	total_price = models.IntegerField(null=True)
-	sale_time = models.DateTimeField(auto_now_add=True)
+	sale_time = models.DateTimeField(default=tz.now())
 
 	def __str__(self):
 		return f"Sale of {self.drug_name}"
@@ -444,3 +478,13 @@ class Sale(models.Model):
 		self.total_price = self.drug.price * self.amount
 		self.drug.injectable_set.all()[0].sell(self.amount, units)
 		self.save()
+
+	@property
+	def cost_price(self):
+		cost = self.drug.cost_price
+		amount = self.amount
+
+		if self.drug_name[-5] == "- TAB":
+			amount /= int(self.drug.Tablet.get_tab_cd()[0])
+
+		return cost * amount

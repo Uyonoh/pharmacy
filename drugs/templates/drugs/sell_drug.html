@@ -17,6 +17,7 @@
 
 		<label name="price"  id="price">$ {{drug.price}}</label><br />
 		<!-- <span><input type="checkbox" name="tab-check" id="tab-check">Tab <br /></span> -->
+        <!-- <span><input type="number" name="time" id="time">Time</span> -->
 	
 		<button class="submit" type="submit" name="add_sale_list" value="add">Add Sale</button>
 		<button class="submit" type="submit" name="register_sale" value="register">Register Sale</button>
@@ -61,6 +62,23 @@
             basePrice *= ntabs;
         }
         updatePrice();
+    })
+
+
+    //handle for time toggle
+    var timeHandle = document.querySelector('#id_time_toggle');
+    //handle for sale time
+    var time = document.querySelector("#div_id_sale_time");
+    time.classList.add("hidden"); 
+
+    timeHandle.addEventListener("click", function () {
+        if (timeHandle.checked == true) {
+            time.classList.remove("hidden");
+            
+        } else {
+            time.classList.add("hidden");
+        }
+        console.log("353");
     })
 
 </script>

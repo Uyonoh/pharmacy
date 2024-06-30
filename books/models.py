@@ -23,21 +23,73 @@ class BussinessMonth(models.Model):
 			return True
 		return False
 	
-	def get_credits(self) -> int:
+	def get_credits(self, closing=None) -> int:
 		credit = 0
 
-		credits = Credit.objects.filter(book_date__month=self.opening_date.month)
+		if not closing:
+			closing = self.closing
+
+		# credits = Credit.objects.filter(book_date__month=self.opening_date.month)
+		credits = Credit.objects.filter(book_date__gte=self.opening_date)
+		credits = credits.filter(book_date__lte=closing)
 		for item in credits:
 			credit += item.amount
 		return credit
 
-	def get_debits(self) -> int:
+	def get_debits(self, closing=None) -> int:
 		debit = 0
 
-		debits = Debit.objects.filter(book_date__month=self.opening_date.month)
+		if not closing:
+			closing = self.closing
+
+		debits = Debit.objects.filter(book_date__gte=self.opening_date)
+		debits = debits.filter(book_date__lte=closing)
 		for item in debits:
 			debit += item.amount
 		return debit
+	
+	def get_sales(self, closing=None) -> int:
+		sold_stock = 0
+
+		if not closing:
+			closing = self.closing
+
+		sales = Sale.objects.filter(sale_time__date__gte=self.opening_date)
+		sales = sales.filter(sale_time__date__lte=closing)
+
+		for sale in sales:
+			sold_stock += sale.total_price
+
+		return sold_stock
+	
+	def get_sale_costs(self, closing=None):
+		""" Returns the price of drugs sold at cost prices """
+		sold_stock = 0
+
+		if not closing:
+			closing = self.closing
+
+		sales = Sale.objects.filter(sale_time__date__gte=self.opening_date)
+		sales = sales.filter(sale_time__date__lte=closing)
+
+		for sale in sales:
+			sold_stock += sale.cost_price
+
+		return sold_stock
+
+	def get_stocks(self, closing=None) -> int:
+		added_stock = 0
+
+		if not closing:
+			closing = self.closing
+
+		stocks = Stock.objects.filter(date_added__gte=self.opening_date)
+		stocks = stocks.filter(date_added__lte=closing)
+
+		for item in stocks:
+			added_stock += item.price
+
+		return added_stock
 
 
 	def balance_cash(self) -> int:
@@ -52,29 +104,33 @@ class BussinessMonth(models.Model):
 
 	def balance_stock(self) -> int:
 		""" Compute and return balances for stock """
-		sold_stock = 0
-		added_stock = 0
+		# sold_stock = 0
+		# added_stock = 0
 
-		# Filter stock and sales by bussiness month and get total cost and sales
-		sales = Sale.objects.filter(sale_time__month=self.opening_date.month)
-		stock = Stock.objects.filter(date_added__month=self.opening_date.month)
+		# # Filter stock and sales by bussiness month and get total cost and sales
+		# sales = Sale.objects.filter(sale_time__month=self.opening_date.month)
+		# stock = Stock.objects.filter(date_added__month=self.opening_date.month)
 
-		for sale in sales:
-			sold_stock += sale.total_price
+		# for sale in sales:
+		# 	sold_stock += sale.total_price
 		
-		for item in stock:
-			added_stock += item.price
+		# for item in stock:
+		# 	added_stock += item.price
+		sold_stock = self.get_sales()
+		added_stock = self.get_stocks()
 
 		balance = self.opening_stock + added_stock - sold_stock
 		return balance
 
-	def calculate_profit(self) -> None:
+	def calculate_profit(self, commit=True) -> None:
 		""" Calculate the profit of a bussiness month """
-		cash_profit = self.closing_cash - self.opening_cash
-		stock_profit = self.closing_stock - self.opening_stock
-		total_profit = cash_profit + stock_profit
-		self.profit = total_profit
-		self.save()
+		cash_income = self.get_credits() - self.get_debits()
+		stock_outflow = self.get_stocks() - self.get_sales()
+		sale_profit = self.get_sales() - self.get_sale_costs()
+		# total_profit = cash_income + stock_outflow
+		self.profit = sale_profit
+		if commit:
+			self.save()
 		#return cash_profit, stock_profit, total_profit
 
 	def close(self, dates=[]) -> None:
@@ -90,6 +146,13 @@ class BussinessMonth(models.Model):
 		self.calculate_profit()
 		self.save()
 	
+	@property
+	def closing(self):
+		if self.closing_date:
+			return self.closing_date
+		else:
+			return tz.now().date()
+
 	def __str__(self) -> str:
 		return f"Bussiness month from {self.opening_date} to {self.closing_date}"
 

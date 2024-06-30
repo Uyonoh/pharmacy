@@ -1,6 +1,7 @@
 from datetime import date
 import re
 from typing import Any
+from django import forms
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.template import Context
@@ -10,6 +11,7 @@ from django.urls import reverse
 from books.models import Credit, Debit, Stock
 from .forms import DrugForm, SaleForm, SalesForm, TabletForm, SuspensionForm, InjectableForm
 from .models import Drug, Sale, Tablet, Suspension, Injectable
+from django.utils import timezone as tz
 # Create your views here.
 
 class index(FormView):
@@ -114,9 +116,9 @@ def injectable(request):
 
 			return HttpResponseRedirect(reverse("drugs:add"))
 
-		else:
-			form = InjectableForm()
-		return render(request, "drugs/add_drugs.html", {"form":form})
+	else:
+		form = InjectableForm()
+	return render(request, "drugs/add_drugs.html", {"form":form})
 
 def update_stock_tab(drug, form):
 	new_stock_amount = form.instance.purchase_amount
@@ -162,6 +164,7 @@ def add_drugs(request):
 			
 			cost_price = float(request.POST.get("cost_price"))
 			price = float(request.POST.get("sale_price"))
+			
 			print(price)
 
 			
@@ -328,11 +331,25 @@ def restock(request, pk: int):
 def edit(request, pk):
 	drug = Drug.objects.get(pk=pk)
 	form = DrugForm(instance=drug)
+	form["sale_price"].initial = form.instance.price
 
 	if request.method == "POST":
-		form = DrugForm(request.POST)
-		if form.is_valid():
-			pass
+		new_form = DrugForm(request.POST)
+		# new_form.drug = drug
+		if new_form.is_valid():
+			if str(new_form) == str(form):
+				print("Same")
+			else:
+				update_fields = []
+				for field, edit_field in zip(form, new_form):
+					if not str(field.value()) == str(edit_field.value()):
+						form[field.name].value = new_form[edit_field.name].value
+						
+						update_fields.append(edit_field.name)
+				print(update_fields)
+				form.instance.update(form)
+				form.instance.save(update_fields=update_fields)
+
 
 	return render(request, "drugs/add_drugs.html", {"form":form})
 
@@ -455,12 +472,16 @@ class SellDrugs(ListView):
 		if state != "Tab":
 			form.fields["tab_state"].widget = form.fields["tab_state"].hidden_widget()
 
+		
+
+		# form.fields["sale_time"].widget = form.fields["sale_time"].hidden_widget()
+
 		form["drug_name"].initial = drug_name
 		form["brand_name"].initial = brand_name
 		form["weight"].initial = weight
 		form["state"].initial = state
 		form["price"].initial = 0
-		form.fields["price"].widget = form.fields["price"].hidden_widget()
+		# form.fields["price"].widget = form.fields["price"].hidden_widget()
 
 		return render(request, self.template_name, {"form": form, "drug":drug})
 	
@@ -472,6 +493,13 @@ class SellDrugs(ListView):
 		stock = drug.stock_amount
 
 		form.fields["price"].widget = form.fields["price"].hidden_widget()
+
+		if form["time_toggle"].value() == True:
+			pass
+		else:
+			form.instance.sale_time = str(tz.now())
+
+		
 		err_msg = ""
 		# If the data is valid
 		# Subtract from drug and register sales and credit
@@ -479,6 +507,7 @@ class SellDrugs(ListView):
 			form.upper()
 			price = request.POST.get("price")
 			form.instance.drug = drug
+
 
 			if request.POST.get("add_sale_list"):
 				form.add(drug)
@@ -523,3 +552,17 @@ class SellDrugs(ListView):
 		return HttpResponse("<script type='text/javascript'>window.close();</script>")
 		# return HttpResponseRedirect(self.list_path)
 		# return render(request, self.template_name, {"form":form, "err_msg":err_msg})
+
+
+class ViewStock(ListView):
+	model = Drug
+	template_name = "drugs/stock.html"
+	context_object_name = "drugs"
+	
+
+	def get_context_data(self, **kwargs):
+		context = super().get_context_data(**kwargs)
+		context["d-class"] = "exp-far"
+		context["headings"] = ["drug_name", "brand_name", "drug_type", "state", "weight",
+							"manufacturer", "exp_date", "stock_amount", "price"]
+		return context
