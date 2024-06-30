@@ -1,2 +1,0 @@
-"python manage.py sqlmigrate pharm m1" 
-python manage.py sqlmigrate pharm m1 
