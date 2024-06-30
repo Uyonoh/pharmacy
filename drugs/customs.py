@@ -1,5 +1,5 @@
 from random import choices
-from attr import field
+# from attr import field
 from django import forms
 from django.db import models
 from django.core.exceptions import ValidationError

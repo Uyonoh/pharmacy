@@ -1,5 +1,5 @@
 from django import forms
-from matplotlib import widgets
+# from matplotlib import widgets
 from .models import PharmacyStaff, AppUser
 
 class PharmacyStaffForm(forms.ModelForm):
