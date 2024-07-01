@@ -27,13 +27,14 @@ SECRET_KEY = os.environ.get("SECRET_KEY", default='django-insecure-!z4_r*)k-uz18
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True #"RENDER" not in os.environ
 
-ALLOWED_HOSTS = ['127.0.0.1', "https://pharmacy-pbtp.onrender.com"]
+ALLOWED_HOSTS = ['127.0.0.1']
 
-CSRF_TRUSTED_ORIGINS = ["https://pharmacy-pbtp.onrender.com"]
+CSRF_TRUSTED_ORIGINS = []
 
 RENDER_EXTERNAL_HOSTNAME =  os.environ.get("RENDER_EXTERNAL_HOSTNAME")
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+    CSRF_TRUSTED_ORIGINS.append(RENDER_EXTERNAL_HOSTNAME)
 
 
 # Application definition
