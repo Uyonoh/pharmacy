@@ -52,7 +52,8 @@ INSTALLED_APPS = [
 	'main.apps.MainConfig',
 	'payment.apps.PaymentConfig',
 	'users.apps.UsersConfig',
-	'crispy_forms'
+	'crispy_forms',
+	"crispy_bootstrap4",
 ]
 
 MIDDLEWARE = [
@@ -166,5 +167,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
+
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap4"
 
 CRISPY_TEMPLATE_PACK = "bootstrap4"
