@@ -8,7 +8,7 @@ from .forms import AppUserForm, PharmacyStaffForm
 
 def register(request):
 	form = PharmacyStaffForm()
-	print(request);
+	print(request)
 	if request.method == "POST":
 		print(request.POST)
 		form = PharmacyStaffForm(request.POST)
@@ -23,7 +23,7 @@ def register(request):
 			# print(form.password)
 			print(form)
 			form.save()	
-			return render(request, "users/register.html", {"form": form})
+			# return render(request, "users/register.html", {"form": form})
 			return HttpResponseRedirect("/users/login")
 		else:
 			#print(form.errors)
